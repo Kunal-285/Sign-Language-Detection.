@@ -183,7 +183,7 @@ Output: Softmax (4 classes)
 |------|------|
 | Kunal Bairwa | Lead Developer |
 | Prateek Sharma | ML & Training |
-| Jhanvi Kumar Aloda | Frontend & UI |
+| Jhanvi Kumar Arora | Frontend & UI |
 | Neha Singhal | Data Collection & Testing |
 
 **Guide:** Mrs. Priyanka Tiwari
