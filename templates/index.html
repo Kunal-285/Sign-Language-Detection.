@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignAI — Neural Gesture Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- ✅ NEURAL NETWORK LIVE CANVAS — fills entire background -->
+    <canvas id="neuralCanvas"></canvas>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="#38bdf8" stroke-width="1.5" fill="none"/>
+                        <path d="M14 8L20 11V17L14 20L8 17V11L14 8Z" fill="#38bdf8" opacity="0.3"/>
+                        <circle cx="14" cy="14" r="2" fill="#38bdf8"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="logo-text">Sign<span class="logo-accent">AI</span></span>
+                    <span class="logo-sub">Neural Gesture Engine v2.1</span>
+                </div>
+            </div>
+            <nav class="header-nav">
+                <div class="status-pill" id="statusPill">
+                    <span class="status-dot"></span>
+                    <span id="statusText">OFFLINE</span>
+                </div>
+                <div class="header-stat">
+                    <span class="stat-label">FPS</span>
+                    <span class="stat-val" id="fpsDisplay">--</span>
+                </div>
+                <div class="header-stat">
+                    <span class="stat-label">FRAMES</span>
+                    <span class="stat-val" id="frameCount">0</span>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN: floating UI cards over the neural canvas -->
+    <main class="main">
+
+        <!-- LEFT: Video Panel -->
+        <section class="panel panel-video">
+            <div class="panel-label">⬡ LIVE FEED</div>
+
+            <div class="video-wrapper" id="videoWrapper">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="video-scanline"></div>
+
+                <video id="video" autoplay playsinline muted></video>
+
+                <div class="video-idle" id="videoIdle">
+                    <div class="idle-ring"></div>
+                    <div class="idle-ring ring2"></div>
+                    <div class="idle-ring ring3"></div>
+                    <div class="idle-icon">
+                        <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                            <path d="M22 28C22 25.8 23.8 24 26 24H38C40.2 24 42 25.8 42 28V38C42 40.2 40.2 42 38 42H26C23.8 42 22 40.2 22 38V28Z" stroke="#38bdf8" stroke-width="1.5" fill="none"/>
+                            <circle cx="32" cy="30" r="4" stroke="#38bdf8" stroke-width="1.5" fill="none"/>
+                            <path d="M24 42C24 38.7 27.6 36 32 36C36.4 36 40 38.7 40 42" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <p class="idle-text">Camera Inactive</p>
+                    <p class="idle-sub">Press START to initialize</p>
+                </div>
+
+                <div class="pred-overlay" id="predOverlay">
+                    <div class="pred-chip">
+                        <span class="pred-icon">◈</span>
+                        <span id="overlayPred">Analyzing...</span>
+                    </div>
+                </div>
+
+                <div class="conf-bar-wrap">
+                    <div class="conf-bar-fill" id="confBarFill"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-start" id="btnStart" onclick="startCamera()">
+                    <span class="btn-icon">▶</span><span>START</span>
+                </button>
+                <button class="btn btn-stop" id="btnStop" onclick="stopCamera()" disabled>
+                    <span class="btn-icon">■</span><span>STOP</span>
+                </button>
+                <button class="btn btn-clear" onclick="clearSentence()">
+                    <span class="btn-icon">⌫</span><span>CLEAR</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT: Output Panel -->
+        <section class="panel panel-output">
+
+            <div class="result-card">
+                <div class="result-header">
+                    <span class="result-label">⬡ DETECTED GESTURE</span>
+                    <div class="result-badge" id="resultBadge">IDLE</div>
+                </div>
+                <div class="result-word" id="predictionText">---</div>
+                <div class="conf-label-row">
+                    <span class="mono">CONFIDENCE</span>
+                    <span class="conf-pct" id="confPct">0.0%</span>
+                </div>
+                <div class="conf-track">
+                    <div class="conf-fill" id="confFill"></div>
+                    <div class="conf-glow" id="confGlow"></div>
+                </div>
+            </div>
+
+            <div class="sentence-card">
+                <div class="sentence-header">
+                    <span>⬡ SENTENCE BUILDER</span>
+                    <div class="word-count" id="wordCount">0 words</div>
+                </div>
+                <div class="sentence-display" id="sentenceDisplay">
+                    <span class="sentence-placeholder">Your sentence will appear here...</span>
+                </div>
+                <div class="sentence-actions">
+                    <button class="action-btn" onclick="addWordToSentence()">+ ADD WORD</button>
+                    <button class="action-btn action-btn-secondary" onclick="copyToClipboard()">⎘ COPY</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-val" id="totalFrames">0</div>
+                    <div class="stat-card-label">Total Frames</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-val" id="successRate">0%</div>
+                    <div class="stat-card-label">Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-val" id="avgConf">0.0</div>
+                    <div class="stat-card-label">Avg Confidence</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-val" id="sessionTime">00:00</div>
+                    <div class="stat-card-label">Session Time</div>
+                </div>
+            </div>
+
+            <div class="log-card">
+                <div class="log-header">
+                    <span>⬡ ACTIVITY LOG</span>
+                    <span class="log-pulse" id="logPulse"></span>
+                </div>
+                <div class="log-body" id="logBody">
+                    <div class="log-entry log-info">
+                        <span class="log-time">00:00</span>
+                        <span class="log-msg">Neural network initialized. Ready.</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <span class="footer-brand">SignAI Neural Engine</span>
+            <span class="footer-sep">|</span>
+            <span class="footer-tech">Flask + MediaPipe + TensorFlow</span>
+            <span class="footer-sep">|</span>
+            <span>Support: <a href="tel:8619755166" class="footer-link">+91 86197 55166</a></span>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
